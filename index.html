@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飛ぶトコ予報</title>
+    
+    <!-- ここにGoogle AdSenseの自動広告コードを貼り付けます -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-xxxxxxxxxxxxxxxx"
+         crossorigin="anonymous"></script>
+
+    <!-- サイトのファビコン（アイコン） -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3C!-- 背景の空 --%3E%3Crect width='100' height='100' fill='%2387CEEB'/%3E%3C!-- 太陽 --%3E%3Ccircle cx='75' cy='25' r='20' fill='%23FFD700'/%3E%3C!-- 雲 --%3E%3Cpath d='M20 60 Q 10 40 30 40 Q 50 20 70 40 Q 90 40 80 60 Z' fill='%23FFFFFF'/%3E%3C!-- 飛行機本体 --%3E%3Cpath d='M20 50 L 80 50 L 90 45 L 90 55 L 80 50 Z' fill='%234682B4'/%3E%3C!-- 飛行機の翼 --%3E%3Cpath d='M60 50 L 70 40 L 70 60 Z' fill='%234682B4'/%3E%3Cpath d='M30 50 L 20 40 L 20 60 Z' fill='%234682B4'/%3E%3C!-- 飛行機の窓 --%3E%3Ccircle cx='40' cy='48' r='3' fill='%23ADD8E6'/%3E%3Ccircle cx='50' cy='48' r='3' fill='%23ADD8E6'/%3E%3Ccircle cx='60' cy='48' r='3' fill='%23ADD8E6'/%3E%3C/svg%3E" type="image/svg+xml">
+
+    <!-- Select2 CSSの読み込み -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🛫 飛ぶトコ予報 🛬</h1>
+        <p class="description">飛行機が「飛ぶトコ」（出発地・目的地）の気象状況に基づいて、フライトの欠航・遅延リスクを簡易的に予測します。</p>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label for="departure-airport-select">出発空港を選択してください:</label>
+                <select id="departure-airport-select" style="width: 100%;"></select>
+            </div>
+
+            <div class="input-group">
+                <label for="arrival-airport-select">到着空港を選択してください:</label>
+                <select id="arrival-airport-select" style="width: 100%;"></select>
+            </div>
+
+            <div class="input-group">
+                <label for="date-select">日付を選択してください:</label>
+                <!-- 日付オプションはJavaScriptで動的に生成します -->
+                <select id="date-select"></select>
+            </div>
+            
+            <div class="input-group">
+                <label for="departure-time">出発時刻を選択してください:</label>
+                <input type="time" id="departure-time" value="12:00"> 
+            </div>
+            
+            <div class="button-group">
+                <button id="predict-button">リスクを予測する</button>
+                <button id="reset-button" class="secondary-button">リセット</button>
+            </div>
+
+            <!-- ローディングインジケーター -->
+            <div id="loading-indicator" class="loading-indicator" style="display: none;">
+                <div class="spinner"></div>
+                <p>予測データを取得中...</p>
+            </div>
+        </div>
+
+        <div class="result-section" id="result-section" style="display: none;">
+            <h2>予測結果</h2>
+            
+            <!-- 出発空港の予測結果 -->
+            <div class="airport-result-box">
+                <h3>出発空港: <span id="display-departure-airport"></span></h3>
+                <p><strong>日付:</strong> <span id="display-date"></span></p>
+                <p><strong>時刻:</strong> <span id="display-time"></span></p>
+                <div class="weather-summary">
+                    <img id="departure-weather-icon" src="" alt="天気アイコン" class="weather-icon">
+                    <p><strong>天候:</strong> <span id="display-departure-weather"></span></p>
+                </div>
+                <p><strong>風速:</strong> <span id="display-departure-wind"></span></p>
+                <p><strong>気温:</strong> <span id="display-departure-temp"></span></p>
+                <p><strong>湿度:</strong> <span id="display-departure-humidity"></span></p>
+                <p><strong>気圧:</strong> <span id="display-departure-pressure"></span></p>
+                <p><strong>視程:</strong> <span id="display-departure-visibility"></span></p>
+                <p><strong>雲量:</strong> <span id="display-departure-clouds"></span></p>
+                <p class="risk-level"><strong>欠航・遅延リスク:</strong> <span id="display-departure-risk" class="risk-low"></span></p>
+            </div>
+
+            <!-- 到着空港の予測結果 -->
+            <div class="airport-result-box">
+                <h3>到着空港: <span id="display-arrival-airport"></span></h3>
+                <p><strong>日付:</strong> <span id="display-date-arrival"></span></p>
+                <p><strong>時刻:</strong> <span id="display-time-arrival"></span></p>
+                <div class="weather-summary">
+                    <img id="arrival-weather-icon" src="" alt="天気アイコン" class="weather-icon">
+                    <p><strong>天候:</strong> <span id="display-arrival-weather"></span></p>
+                </div>
+                <p><strong>風速:</strong> <span id="display-arrival-wind"></span></p>
+                <p><strong>気温:</strong> <span id="display-arrival-temp"></span></p>
+                <p><strong>湿度:</strong> <span id="display-arrival-humidity"></span></p>
+                <p><strong>気圧:</strong> <span id="display-arrival-pressure"></span></p>
+                <p><strong>視程:</strong> <span id="display-arrival-visibility"></span></p>
+                <p><strong>雲量:</strong> <span id="display-arrival-clouds"></span></p>
+                <p class="risk-level"><strong>欠航・遅延リスク:</strong> <span id="display-arrival-risk" class="risk-low"></span></p>
+            </div>
+
+            <!-- 航空会社リンク -->
+            <div class="airline-links-section">
+                <h3>航空会社の運航状況確認</h3>
+                <p>最新の運航情報は、各航空会社の公式サイトでご確認ください。</p>
+                <div id="airline-links-container" class="airline-links">
+                    <!-- JavaScriptでリンクを動的に生成 -->
+                </div>
+            </div>
+
+            <p class="disclaimer">
+                ※この予測は簡易的なものであり、気象状況に基づいた目安です。<br>
+                実際の運航状況は、必ずご利用の航空会社の公式サイトでご確認ください。<br>
+                ※時刻指定の予測は、OpenWeatherMapの3時間ごとの予報に基づいています。<br>
+                ※過去の欠航データとの連携は、データの入手が困難なため、このサイトでは実装していません。
+            </p>
+        </div>
+
+        <!-- このサイトについてセクション -->
+        <div class="about-section">
+            <h2 id="about-toggle">このサイトについて ▼</h2>
+            <div id="about-content" style="display: none;">
+                <p>この「飛ぶトコ予報」サイトは、ご指定いただいた出発・到着空港と時刻における**気象条件のみ**に基づき、フライトの欠航・遅延リスクを簡易的に予測するものです。</p>
+                <p>OpenWeatherMapの公開APIから取得した気象予報データ（気温、風速、湿度、気圧、視程、雲量など）と、一般的な気象条件と運航への影響に関するルールに基づいてリスクを判定しています。</p>
+                <h3>予測の限界とご注意</h3>
+                <ul>
+                    <li><strong>気象条件のみ:</strong> この予測は、機材トラブル、航空管制、乗務員の都合、空港の混雑、テロ警戒など、気象以外の要因は一切考慮していません。</li>
+                    <li><strong>予報データ:</strong> OpenWeatherMapの予報は3時間ごとのデータであり、完全に正確なリアルタイムの状況を反映するものではありません。</li>
+                    <li><strong>過去データ不使用:</strong> 過去の実際の欠航・遅延データとの連携は、データの入手が困難であるため、このサイトでは行っていません。</li>
+                    <li><strong>あくまで目安:</strong> 表示されるリスクレベルは、あくまで「目安」としてご活用ください。</li>
+                </ul>
+                <p><strong>実際のフライトの運航状況は、必ずご利用の航空会社や空港の公式サイトで最新の情報をご確認ください。</strong></p>
+            </div>
+        </div>
+
+        <!-- ユーザーからのフィードバック/体験談セクション -->
+        <div class="feedback-section">
+            <h2>フライト体験談・ご意見</h2>
+            <p>このサイトをご利用いただきありがとうございます。あなたのフライト体験談やサイトへのご意見をお聞かせください。</p>
+            <!-- Google Formsの埋め込みコードを貼り付けます -->
+            <iframe src="https://forms.gle/KqFLXPyrBTkZqDzL7" width="100%" height="800" frameborder="0" marginheight="0" marginwidth="0">読み込み中…</iframe>
+        </div>
+
+    </div>
+
+    <!-- jQueryの読み込み (Select2が必要とするため) -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <!-- Select2 JSの読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- サイトのJavaScriptファイル -->
+    <script src="script.js"></script> 
+</body>
+</html>
